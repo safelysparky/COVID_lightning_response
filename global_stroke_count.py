@@ -45,10 +45,13 @@ for y in y_str:
 
 cell_idx=list(np.arange(180*360)) # each cell correspond to a dict
 
+# layer 3 dict initilization
 l3_key_names=['lon','lat','n_IC','n_CG']
 l3_items_list=[-999,-999,0,0]
-l2_dict={l3_key: l3_item for l3_key,l3_item in zip(l3_key_names,l3_items_list)} 
-l1_dict={cell_no: copy.deepcopy(l2_dict) for cell_no in cell_idx} 
+l3_dict={l3_key: l3_item for l3_key,l3_item in zip(l3_key_names,l3_items_list)} 
+
+# layer 2 dict initilization, each key is the cell no
+l2_dict={cell_no: copy.deepcopy(l3_dict) for cell_no in cell_idx} 
 
 xx=np.arange(-180,180)
 yy=np.arange(-90,90)
@@ -70,9 +73,11 @@ Y1=Y.ravel()
 A1=A.ravel()
 
 # assign the lat and lon to each cell
-for key in l1_dict.keys():
-    l1_dict[key]['lon']=X1[key]
-    l1_dict[key]['lat']=Y1[key]
+for key in l2_dict.keys():
+    l2_dict[key]['lon']=X1[key]
+    l2_dict[key]['lat']=Y1[key]
 
-# the parent dict
-D={ym: copy.deepcopy(l1_dict) for ym in ym_str}
+# the layer1 dict, each key is year+month,e.g., "201801"
+D={ym: copy.deepcopy(l2_dict) for ym in ym_str}
+print("The dictionary has been initialized")
+
