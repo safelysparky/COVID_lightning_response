@@ -2,6 +2,24 @@ import os
 import re
 import numpy as np
 import copy
+import enipy3 as lx
+import pickle
+
+def event_count_by_cell(lat_cg,lon_cg,key1,key3,D):
+    cell_idx=(lat_cg+90)*360+(lon_cg+180)
+    unique_cell_idx, counts = np.unique(cell_idx, return_counts=True)
+    for idx,cnt in zip(unique_cell_idx,counts):
+        D[key1][idx][key3]+=cnt
+    return D
+
+def save_obj(obj, name):
+    with open(name, 'wb') as f:
+        pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+
+def load_obj(name):
+    with open(name, 'rb') as f:
+        return pickle.load(f)
+
 
 parent_dir="/data2/Pulse/"
 y_str=["2018","2019","2020"]
@@ -29,6 +47,7 @@ for y in y_str:
     fname_list=fname_list+fname_list_year
 
 fname_list.sort()
+print(fname_list[0:5])
 print(f"Total number of state files is {len(fname_list)}")
 
 
@@ -46,8 +65,8 @@ for y in y_str:
 cell_idx=list(np.arange(180*360)) # each cell correspond to a dict
 
 # layer 3 dict initilization
-l3_key_names=['lon','lat','n_IC','n_CG']
-l3_items_list=[-999,-999,0,0]
+l3_key_names=['lon','lat','n_ic','n_cg','n_wln','n']
+l3_items_list=[-999,-999,0,0,0,0]
 l3_dict={l3_key: l3_item for l3_key,l3_item in zip(l3_key_names,l3_items_list)} 
 
 # layer 2 dict initilization, each key is the cell no
@@ -80,4 +99,46 @@ for key in l2_dict.keys():
 # the layer1 dict, each key is year+month,e.g., "201801"
 D={ym: copy.deepcopy(l2_dict) for ym in ym_str}
 print("The dictionary has been initialized")
+
+
+## example file path '/data2/Pulse/2018/01/LtgFlashPortions20180102.state'
+# fill the dictionary！
+for f in fname_list:
+    str_split=f.split('/') # e.g., ['', 'data2', 'Pulse', '2018', '01', 'LtgFlashPortions20180102.state']
+    key1=str_split[3]+str_split[4] # e.g., '201801'
+
+    a=lx.Report(f)
+
+    #floor the lat and lon for easy cell_idx calculation
+    lat=np.floor(a.lat)
+    lon=np.floor(a.lon)
+    cg_ic=a.type
+
+    # 0: CG, 1: IC, 40: WWLLN
+    lat_cg=lat[cg_ic==0]
+    lon_cg=lon[cg_ic==0]
+    
+    lat_ic=lat[cg_ic==1]
+    lon_ic=lon[cg_ic==1]
+
+    lat_wln=lat[cg_ic==40]
+    lon_wln=lon[cg_ic==40]
+
+    # count CG:
+    D=event_count_by_cell(lat_cg,lon_cg,key1,"n_cg",D)
+    D=event_count_by_cell(lat_ic,lon_ic,key1,"n_ic",D)
+    D=event_count_by_cell(lat_wln,lon_wln,key1,"n_wln",D)
+    D=event_count_by_cell(lat,lon,key1,"n",D)
+
+    # keep track of files processed
+    f_idx=fname_list.index(f)+1
+    print(f"{f_idx}/{len(fname_list)} finished, {f}")
+
+save_obj (D,'D.pkl')
+
+    # print(np.asarray((unique, counts)).T)
+
+    # print(len(lat),sum(counts))
+
+
 
