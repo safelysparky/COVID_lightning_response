@@ -109,10 +109,23 @@ for f in fname_list:
 
     a=lx.Report(f)
 
-    #floor the lat and lon for easy cell_idx calculation
-    lat=np.floor(a.lat)
-    lon=np.floor(a.lon)
+    # remove duplications, #sometimes wwlln events mixed in and have some duplicates
+    t=a.time
+    lat=a.lat
+    lon=a.lon
     cg_ic=a.type
+    pc=a.amplitude
+    
+    A=np.hstack((t.reshape(-1,1),lat.reshape(-1,1),lon.reshape(-1,1),cg_ic.reshape(-1,1),pc.reshape(-1,1))) 
+    A1=np.unique(A,axis=0)
+
+    lat=A1[:,1]
+    lon=A1[:,2]
+    cg_ic=A1[:,3]
+
+    #floor the lat and lon for easy cell_idx calculation
+    lat=np.floor(lat)
+    lon=np.floor(lon)
 
     # 0: CG, 1: IC, 40: WWLLN
     lat_cg=lat[cg_ic==0]
