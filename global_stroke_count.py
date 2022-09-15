@@ -22,7 +22,7 @@ def load_obj(name):
 
 
 parent_dir="/data2/Pulse/"
-y_str=["2018","2019","2020"]
+y_str=["2018","2019","2020","2021"]
 
 # find filenames of state files in the folder by year
 fname_list=[]
